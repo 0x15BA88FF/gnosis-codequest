@@ -1,0 +1,1159 @@
+openapi: 3.0.3
+info:
+  title: Gnosis API
+  version: 1.0.0
+  description: |
+    AI-powered knowledge base for teams — upload documents, query them with natural
+    language, and collaborate via minds and organizations.
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /hello:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: health
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello, World!
+
+  /api/v1/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid email or password
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /api/v1/auth/verify-email:
+    post:
+      tags: [Authentication]
+      summary: Verify email address
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailRequest"
+      responses:
+        "204":
+          description: Email verified
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out (revoke all refresh tokens)
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "204":
+          description: Logged out
+
+  /api/v1/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /api/v1/organizations:
+    post:
+      tags: [Organizations]
+      summary: Create an organization
+      operationId: createOrganization
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrgRequest"
+      responses:
+        "201":
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgResponse"
+    get:
+      tags: [Organizations]
+      summary: List organizations for current user
+      operationId: listOrganizations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgResponse"
+
+  /api/v1/organizations/{orgId}:
+    get:
+      tags: [Organizations]
+      summary: Get organization by ID
+      operationId: getOrganization
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/organizations/{orgId}/members/{userId}:
+    delete:
+      tags: [Organizations]
+      summary: Remove a member from organization
+      operationId: removeOrgMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Member removed
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/organizations/{orgId}/minds:
+    post:
+      tags: [Minds]
+      summary: Create a mind in an organization
+      operationId: createMind
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMindRequest"
+      responses:
+        "201":
+          description: Mind created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MindResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Minds]
+      summary: List minds in an organization
+      operationId: listMinds
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of minds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MindResponse"
+
+  /api/v1/minds/{mindId}:
+    get:
+      tags: [Minds]
+      summary: Get mind by ID
+      operationId: getMind
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Mind
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MindResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Minds]
+      summary: Update mind (admin only)
+      operationId: updateMind
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMindRequest"
+      responses:
+        "200":
+          description: Mind updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MindResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Minds]
+      summary: Soft-delete a mind (admin only)
+      operationId: deleteMind
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Mind deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/minds/{mindId}/members:
+    get:
+      tags: [Minds]
+      summary: List members of a mind
+      operationId: listMindMembers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MindMemberResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/minds/{mindId}/members/{userId}:
+    patch:
+      tags: [Minds]
+      summary: Update member role (admin only)
+      operationId: updateMindMemberRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberRoleRequest"
+      responses:
+        "204":
+          description: Role updated
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Minds]
+      summary: Remove member from mind (admin only)
+      operationId: removeMindMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Member removed
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/minds/{mindId}/documents:
+    post:
+      tags: [Documents]
+      summary: Upload a document to a mind
+      operationId: uploadDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload (max 50 MB)
+      responses:
+        "200":
+          description: Document uploaded and processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Documents]
+      summary: List documents in a mind
+      operationId: listDocuments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/documents/{docId}:
+    get:
+      tags: [Documents]
+      summary: Get a document by ID
+      operationId: getDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: docId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Documents]
+      summary: Soft-delete a document (mind admin only)
+      operationId: deleteDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: docId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Document deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/query:
+    post:
+      tags: [Query]
+      summary: Query minds with natural language
+      operationId: query
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryRequest"
+      responses:
+        "200":
+          description: Query result with citations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/minds/{mindId}/invites:
+    post:
+      tags: [Invites]
+      summary: Create an invite to a mind (admin only)
+      operationId: createInvite
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mindId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteRequest"
+      responses:
+        "201":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/invites/accept:
+    post:
+      tags: [Invites]
+      summary: Accept a pending invite
+      operationId: acceptInvite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Invite token
+      responses:
+        "204":
+          description: Invite accepted
+
+  /api/v1/invites/decline:
+    post:
+      tags: [Invites]
+      summary: Decline a pending invite
+      operationId: declineInvite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Invite token
+      responses:
+        "204":
+          description: Invite declined
+
+  /api/v1/invites/pending:
+    get:
+      tags: [Invites]
+      summary: List pending invites for current user
+      operationId: listPendingInvites
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of pending invites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InviteResponse"
+
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for current user (paginated)
+      operationId: listNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Zero-based page index
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Page size
+        - name: sort
+          in: query
+          schema:
+            type: string
+            example: createdAt,desc
+          description: Sort property and direction
+      responses:
+        "200":
+          description: Paginated notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageNotificationResponse"
+
+  /api/v1/notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark a notification as read
+      operationId: markNotificationRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Marked as read
+
+  /api/v1/notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: All marked as read
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token obtained from `/api/v1/auth/login` or
+        `/api/v1/auth/register`. Include as:
+        `Authorization: Bearer <token>`
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Too Many Requests
+              message:
+                type: string
+                example: Rate limit exceeded. Try again later.
+
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "urn:problem:not-found"
+        title:
+          type: string
+          example: Not Found
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: "Mind not found: 550e8400-e29b-41d4-a716-446655440000"
+        errors:
+          type: array
+          items:
+            type: string
+          description: Present only for validation errors (status 400)
+
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          example: supersecret123
+        displayName:
+          type: string
+          maxLength: 255
+          example: Alice
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          format: password
+          example: supersecret123
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          example: a1b2c3d4e5f6...
+
+    VerifyEmailRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: Email verification token
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token (15 min TTL)
+        refreshToken:
+          type: string
+          description: Refresh token (30 day TTL)
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        emailVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateOrgRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Acme Corp
+
+    OrgResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ownerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateMindRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Engineering Wiki
+        description:
+          type: string
+          example: Internal engineering knowledge base
+        storageQuotaMb:
+          type: integer
+          default: 2048
+          description: Storage quota in MB
+
+    UpdateMindRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        storageQuotaMb:
+          type: integer
+
+    MindResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        storageQuotaMb:
+          type: integer
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deleted:
+          type: boolean
+          description: Whether the mind is soft-deleted
+
+    UpdateMemberRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [READ, READ_WRITE, ADMIN]
+          example: READ_WRITE
+
+    MindMemberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        userDisplayName:
+          type: string
+        role:
+          type: string
+          enum: [READ, READ_WRITE, ADMIN]
+        joinedAt:
+          type: string
+          format: date-time
+
+    DocumentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        mindId:
+          type: string
+          format: uuid
+        uploadedBy:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        mediaType:
+          type: string
+          example: application/pdf
+        fileSizeBytes:
+          type: integer
+          format: int64
+        processingStatus:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        deleted:
+          type: boolean
+
+    QueryRequest:
+      type: object
+      required: [query, mindIds]
+      properties:
+        query:
+          type: string
+          example: What is our deployment process?
+        mindIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Mind IDs to search
+        topK:
+          type: integer
+          default: 10
+          maximum: 20
+          description: Number of results to return
+
+    QueryResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: Generated answer
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+
+    Citation:
+      type: object
+      properties:
+        chunkId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        content:
+          type: string
+        score:
+          type: number
+          format: double
+
+    InviteRequest:
+      type: object
+      required: [inviteeEmail, role]
+      properties:
+        inviteeEmail:
+          type: string
+          format: email
+          example: bob@example.com
+        role:
+          type: string
+          enum: [READ, READ_WRITE, ADMIN]
+          example: READ
+
+    InviteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        mindId:
+          type: string
+          format: uuid
+        inviteeEmail:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [READ, READ_WRITE, ADMIN]
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DECLINED, EXPIRED]
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        payload:
+          type: string
+          description: Arbitrary JSON payload
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PageNotificationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationResponse"
+        pageable:
+          $ref: "#/components/schemas/Pageable"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+        first:
+          type: boolean
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          $ref: "#/components/schemas/Sort"
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean
+
+    Pageable:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        sort:
+          $ref: "#/components/schemas/Sort"
+        offset:
+          type: integer
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+
+    Sort:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
