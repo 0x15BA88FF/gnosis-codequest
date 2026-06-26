@@ -20,7 +20,7 @@
           packages = with pkgs; [
             pnpm
             jdk21
-            gradle
+            maven
             nodejs_24
           ];
         };

@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gnosis}
+    username: ${DB_USERNAME:gnosis}
+    password: ${DB_PASSWORD:gnosis}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+r2:
+  endpoint: ${R2_ENDPOINT:http://localhost:9000}
+  access-key: ${R2_ACCESS_KEY:minioadmin}
+  secret-key: ${R2_SECRET_KEY:minioadmin}
+  region: ${R2_REGION:us-east-1}
+  bucket: ${R2_BUCKET:gnosis}
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+
+mcp:
+  server-url: ${MCP_SERVER_URL:http://localhost:9001}
+
+resend:
+  api-key: ${RESEND_API_KEY}
+
+rate-limiting:
+  public:
+    capacity: ${RATE_LIMIT_PUBLIC_CAPACITY:20}
+    refill-per-minute: ${RATE_LIMIT_PUBLIC_REFILL:10}
+  query:
+    capacity: ${RATE_LIMIT_QUERY_CAPACITY:30}
+    refill-per-minute: ${RATE_LIMIT_QUERY_REFILL:15}
+
+upload:
+  max-file-size-mb: ${MAX_UPLOAD_SIZE_MB:50}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+    info:
+      enabled: true

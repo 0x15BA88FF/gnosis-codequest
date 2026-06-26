@@ -1,0 +1,47 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:gnosis;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+  flyway:
+    enabled: false
+
+jwt:
+  secret: dGVzdC1zZWNyZXQtd2hpY2gtbXVzdC1iZS1hdC1sZWFzdC0yNTYtYml0cy1sb25n
+  expiration: 86400000
+
+r2:
+  endpoint: http://localhost:9000
+  access-key: test
+  secret-key: test
+  region: us-east-1
+  bucket: gnosis-test
+
+gemini:
+  api-key: test-key
+
+mcp:
+  server-url: http://localhost:9001
+
+resend:
+  api-key: test-key
+
+rate-limiting:
+  public:
+    capacity: 100
+    refill-per-minute: 50
+  query:
+    capacity: 100
+    refill-per-minute: 50
+
+upload:
+  max-file-size-mb: 50

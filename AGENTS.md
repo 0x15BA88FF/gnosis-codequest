@@ -6,9 +6,9 @@ Full-stack monorepo with a Spring Boot API backend and Expo (React Native) mobil
 
 ## Tech Stack
 
-- **Backend:** Java 21, Spring Boot 3.4, Gradle (Kotlin DSL)
+- **Backend:** Java 21, Spring Boot 3.4, Maven
 - **Frontend:** React Native, Expo SDK 56, Expo Router, NativeWind (Tailwind), shadcn/ui
-- **Tooling:** Nix flake, pnpm workspaces, Docker
+- **Tooling:** Nix flake, pnpm, Docker
 
 ## Key Conventions
 
@@ -24,10 +24,10 @@ Full-stack monorepo with a Spring Boot API backend and Expo (React Native) mobil
 
 | Command | Description |
 |---|---|
-| `./gradlew bootRun` | Run dev server on port 8080 |
-| `./gradlew build` | Build JAR |
-| `./gradlew test` | Run tests |
-| `./gradlew bootJar` | Package runnable JAR |
+| `mvn spring-boot:run` | Run dev server on port 8080 |
+| `mvn package` | Build JAR (skips tests) |
+| `mvn test` | Run tests |
+| `mvn package` | Package runnable JAR |
 
 ### Frontend (`apps/app/`)
 
