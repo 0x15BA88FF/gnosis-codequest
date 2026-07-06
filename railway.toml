@@ -1,0 +1,12 @@
+[project]
+name = "gnosis"
+
+[[services]]
+name = "api"
+build = { dockerfile = "apps/api/Dockerfile" }
+
+[[services]]
+name = "minio"
+image = "quay.io/minio/minio:latest"
+command = "server /data --console-address \":9001\""
+port = 9000
