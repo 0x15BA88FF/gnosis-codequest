@@ -33,6 +33,7 @@ public class OrganizationService {
         return OrgResponse.from(org);
     }
 
+    @Transactional(readOnly = true)
     public List<OrgResponse> listByUser(UUID userId) {
         return orgMembershipRepository.findByUserId(userId).stream()
                 .map(ms -> OrgResponse.from(ms.getOrg()))

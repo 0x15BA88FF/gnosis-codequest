@@ -84,6 +84,7 @@ public class MindService {
         mindRepository.save(mind);
     }
 
+    @Transactional(readOnly = true)
     public List<MindMemberResponse> listMembers(UUID mindId) {
         Mind mind = mindRepository.findById(mindId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mind", mindId));
