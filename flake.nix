@@ -21,8 +21,8 @@
             pnpm
             jdk21
             maven
-            nodejs_24
             railway
+            nodejs_24
           ];
         };
       }
