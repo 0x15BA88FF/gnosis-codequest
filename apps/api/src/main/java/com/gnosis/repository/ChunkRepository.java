@@ -2,6 +2,7 @@ package com.gnosis.repository;
 
 import com.gnosis.domain.Chunk;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,6 +12,10 @@ import java.util.UUID;
 public interface ChunkRepository extends JpaRepository<Chunk, UUID> {
     List<Chunk> findByDocumentIdOrderByChunkIndex(UUID documentId);
     void deleteByDocumentId(UUID documentId);
+
+    @Modifying
+    @Query("delete from Chunk c where c.mind.org.id = :orgId")
+    void deleteByOrgId(@Param("orgId") UUID orgId);
 
     @Query(value = """
             SELECT c.id, 1 - (c.embedding <=> CAST(:queryVector AS vector)) AS similarity
