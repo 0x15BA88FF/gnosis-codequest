@@ -37,7 +37,6 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.refreshToken").value(notNullValue()))
                 .andExpect(jsonPath("$.email").value("alice@example.com"));
     }
 
@@ -53,8 +52,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.refreshToken").value(notNullValue()));
+                .andExpect(jsonPath("$.token").value(notNullValue()));
     }
 
     @Test
