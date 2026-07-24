@@ -644,10 +644,10 @@ paths:
           description: List of pending invites
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/InviteResponse"
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/OrgInviteResponse"
 
   /api/v1/notifications:
     get:
@@ -948,13 +948,12 @@ components:
     MindMemberResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
         userId:
           type: string
           format: uuid
-        userDisplayName:
+        email:
+          type: string
+        displayName:
           type: string
         role:
           type: string
@@ -1079,6 +1078,32 @@ components:
           type: string
           format: date-time
         createdAt:
+          type: string
+          format: date-time
+
+    OrgInviteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        orgName:
+          type: string
+        inviteeEmail:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [MEMBER, ADMIN]
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DECLINED, EXPIRED, REVOKED]
+        token:
+          type: string
+        expiresAt:
           type: string
           format: date-time
 
