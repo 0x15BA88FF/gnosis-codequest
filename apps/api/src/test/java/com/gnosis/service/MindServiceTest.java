@@ -30,14 +30,23 @@ class MindServiceTest {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private OrgMembershipRepository orgMembershipRepository;
+
     private User createUser(String email) {
         return userRepository.save(new User(email, "hash", email.split("@")[0]));
+    }
+
+    private OrgMembership createMembership(Organization org, User user, String role) {
+        OrgMembership membership = new OrgMembership(org, user, role);
+        return orgMembershipRepository.save(membership);
     }
 
     @Test
     void createMind() {
         User owner = createUser("mind-owner@example.com");
         Organization org = organizationRepository.save(new Organization("Org", owner));
+        createMembership(org, owner, OrgMembership.ROLE_OWNER);
 
         MindResponse response = mindService.create(org.getId(),
                 new CreateMindRequest("Test Mind", "A test mind", null), owner.getId());
@@ -51,6 +60,7 @@ class MindServiceTest {
     void listByOrg() {
         User owner = createUser("list-mind@example.com");
         Organization org = organizationRepository.save(new Organization("Org", owner));
+        createMembership(org, owner, OrgMembership.ROLE_OWNER);
 
         mindService.create(org.getId(), new CreateMindRequest("Mind1", null, null), owner.getId());
         mindService.create(org.getId(), new CreateMindRequest("Mind2", null, null), owner.getId());
@@ -63,6 +73,7 @@ class MindServiceTest {
     void softDelete() {
         User owner = createUser("delete-mind@example.com");
         Organization org = organizationRepository.save(new Organization("Org", owner));
+        createMembership(org, owner, OrgMembership.ROLE_OWNER);
 
         MindResponse created = mindService.create(org.getId(),
                 new CreateMindRequest("ToDelete", null, null), owner.getId());
@@ -76,6 +87,7 @@ class MindServiceTest {
     void updateMind() {
         User owner = createUser("update-mind@example.com");
         Organization org = organizationRepository.save(new Organization("Org", owner));
+        createMembership(org, owner, OrgMembership.ROLE_OWNER);
 
         MindResponse created = mindService.create(org.getId(),
                 new CreateMindRequest("Original", "Desc", null), owner.getId());

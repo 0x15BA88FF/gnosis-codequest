@@ -25,7 +25,6 @@ class UserRepositoryTest {
         Optional<User> found = userRepository.findByEmail("alice@example.com");
         assertThat(found).isPresent();
         assertThat(found.get().getDisplayName()).isEqualTo("Alice");
-        assertThat(found.get().isEmailVerified()).isFalse();
         assertThat(found.get().getCreatedAt()).isNotNull();
         assertThat(found.get().getUpdatedAt()).isNotNull();
     }

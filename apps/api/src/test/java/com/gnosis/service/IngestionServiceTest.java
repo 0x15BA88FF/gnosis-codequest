@@ -59,7 +59,7 @@ class IngestionServiceTest {
         doc.setProcessingStatus("PENDING");
         doc = documentRepository.save(doc);
 
-        ingestionService.processDocument(doc);
+        ingestionService.processDocument(doc.getId());
 
         Document updated = documentRepository.findById(doc.getId()).orElseThrow();
         assertThat(updated.getProcessingStatus()).isEqualTo("FAILED");
@@ -110,7 +110,7 @@ class IngestionServiceTest {
         doc.setProcessingStatus("PENDING");
         doc = documentRepository.save(doc);
 
-        ingestionService.processDocument(doc);
+        ingestionService.processDocument(doc.getId());
 
         Document updated = documentRepository.findById(doc.getId()).orElseThrow();
         assertThat(updated.getProcessingStatus()).isEqualTo("FAILED");
