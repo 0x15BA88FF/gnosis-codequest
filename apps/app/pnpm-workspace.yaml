@@ -1,0 +1,5 @@
+minimumReleaseAgeExclude:
+  - eas-cli@21.2.0
+onlyBuiltDependencies:
+  - dtrace-provider
+  - unrs-resolver
