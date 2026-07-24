@@ -1,3 +1,8 @@
-onlyBuiltDependencies:
-  - dtrace-provider
-  - unrs-resolver
+allowBuilds:
+  dtrace-provider: true
+  unrs-resolver: true
+hoistPattern:
+  - "*react-native*"
+  - "*css-interop*"
+  - "*expo*"
+  - "*metro*"
