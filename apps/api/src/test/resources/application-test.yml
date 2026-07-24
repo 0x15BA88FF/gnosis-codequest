@@ -17,7 +17,7 @@ spring:
 
 jwt:
   secret: dGVzdC1zZWNyZXQtd2hpY2gtbXVzdC1iZS1hdC1sZWFzdC0yNTYtYml0cy1sb25n
-  expiration: 86400000
+  expiration: 604800000
 
 r2:
   endpoint: http://localhost:9000
