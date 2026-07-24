@@ -18,11 +18,6 @@ public class EmailService {
         this.fromAddress = "noreply@gnosis.app";
     }
 
-    public void sendVerificationEmail(String to, String token) {
-        send(to, "Verify your email",
-                "Click the link to verify your email: " + verificationLink(token));
-    }
-
     public void sendInviteEmail(String to, String inviterName, String mindName, String token) {
         send(to, "You're invited to " + mindName,
                 inviterName + " invited you to join " + mindName + " on Gnosis.\n\n"
@@ -45,10 +40,6 @@ public class EmailService {
         } catch (ResendException e) {
             throw new RuntimeException("Failed to send email", e);
         }
-    }
-
-    private String verificationLink(String token) {
-        return "http://localhost:8080/api/v1/auth/verify-email?token=" + token;
     }
 
     private String inviteLink(String token) {

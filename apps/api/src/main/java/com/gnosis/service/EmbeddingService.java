@@ -34,12 +34,12 @@ public class EmbeddingService {
         return allEmbeddings;
     }
 
-    List<double[]> embedBatch(List<String> texts) {
+List<double[]> embedBatch(List<String> texts) {
         StringBuilder body = new StringBuilder("{\"requests\":[");
         for (int i = 0; i < texts.size(); i++) {
             if (i > 0) body.append(",");
             body.append("""
-                    {"model":"models/text-embedding-004","content":{"parts":[{"text":"%s"}]}}
+                    {"model":"models/gemini-embedding-001","content":{"parts":[{"text":"%s"}]},"outputDimensionality":768}
                     """.formatted(escapeJson(texts.get(i))));
         }
         body.append("]}");
@@ -49,7 +49,7 @@ public class EmbeddingService {
         while (true) {
             try {
                 String response = geminiRestClient.post()
-                        .uri("/models/text-embedding-004:batchEmbedContents")
+                        .uri("/models/gemini-embedding-001:batchEmbedContents")
                         .body(body.toString())
                         .retrieve()
                         .body(String.class);

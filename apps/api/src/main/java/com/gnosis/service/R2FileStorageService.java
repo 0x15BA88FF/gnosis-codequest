@@ -25,6 +25,7 @@ public class R2FileStorageService implements FileStorageService {
     public String upload(UUID mindId, UUID documentId, String fileName,
                          InputStream inputStream, long contentLength, String contentType) {
         String key = "minds/" + mindId + "/docs/" + documentId + "/" + fileName;
+        System.out.println("R2FileStorageService.upload: bucket=" + bucket + ", key=" + key + ", contentLength=" + contentLength);
 
         PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(bucket)
@@ -33,7 +34,14 @@ public class R2FileStorageService implements FileStorageService {
                 .contentLength(contentLength)
                 .build();
 
-        s3Client.putObject(putRequest, RequestBody.fromInputStream(inputStream, contentLength));
+        try {
+            s3Client.putObject(putRequest, RequestBody.fromInputStream(inputStream, contentLength));
+            System.out.println("R2FileStorageService.upload: SUCCESS, returning key=" + key);
+        } catch (Exception e) {
+            System.err.println("R2FileStorageService.upload: ERROR - " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
         return key;
     }
 

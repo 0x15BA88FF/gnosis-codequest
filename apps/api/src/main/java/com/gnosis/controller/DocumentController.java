@@ -59,7 +59,11 @@ public class DocumentController {
     @PostMapping(value = "/minds/{mindId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentResponse> upload(@PathVariable UUID mindId,
                                                     @RequestParam("file") MultipartFile file) {
-        if (!mindSecurityService.hasMindRole(mindId, "READ_WRITE")) {
+        System.out.println("DocumentController.upload called with mindId=" + mindId + ", file=" + file.getOriginalFilename());
+        boolean hasRole = mindSecurityService.hasMindRole(mindId, "READ_WRITE");
+        System.out.println("hasMindRole(READ_WRITE)=" + hasRole);
+        if (!hasRole) {
+            System.out.println("Throwing ResourceNotFoundException");
             throw new ResourceNotFoundException("Mind", mindId);
         }
 
@@ -94,18 +98,27 @@ public class DocumentController {
         doc = documentRepository.save(doc);
 
         try {
+            System.out.println("Uploading to R2...");
             String r2Key = fileStorageService.upload(mindId, doc.getId(),
                     file.getOriginalFilename(), file.getInputStream(),
                     file.getSize(), file.getContentType());
+            System.out.println("R2 upload returned: " + r2Key);
             doc.setR2Key(r2Key);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("R2 upload failed: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
             doc.setProcessingStatus("FAILED");
             doc.setErrorMessage("Upload failed: " + e.getMessage());
         }
         doc = documentRepository.save(doc);
 
         if ("PENDING".equals(doc.getProcessingStatus())) {
-            ingestionService.processDocument(doc);
+            final UUID docId = doc.getId();
+            try {
+                ingestionService.processDocument(docId);
+            } catch (Exception e) {
+                System.err.println("Ingestion failed for document " + docId + ": " + e.getMessage());
+            }
         }
 
         return ResponseEntity.ok(DocumentResponse.from(doc));
