@@ -23,7 +23,7 @@ public class Document {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(name = "r2_key", nullable = false)
+    @Column(name = "r2_key", nullable = true)
     private String r2Key;
 
     @Column(name = "media_type", nullable = false)

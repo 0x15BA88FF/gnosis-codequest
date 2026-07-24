@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -46,18 +47,17 @@ public class IngestionService {
         this.entityManager = entityManager;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processDocument(UUID documentId) {
         Document document = documentRepository.findById(documentId).orElse(null);
         if (document == null) {
             log.warn("Document {} not found for ingestion", documentId);
             return;
         }
-        processDocument(document);
+        doProcessDocument(document);
     }
 
-    @Transactional
-    public void processDocument(Document document) {
+    private void doProcessDocument(Document document) {
         document.setProcessingStatus("PROCESSING");
         document = documentRepository.save(document);
 
@@ -89,9 +89,17 @@ public class IngestionService {
             triggerReadyNotification(document);
         } catch (Exception e) {
             log.error("Ingestion failed for document {}: {}", document.getId(), e.getMessage(), e);
-            document.setProcessingStatus("FAILED");
-            document.setErrorMessage(e.getMessage());
-            documentRepository.save(document);
+            try {
+                entityManager.clear();
+                Document failed = documentRepository.findById(document.getId()).orElse(null);
+                if (failed != null) {
+                    failed.setProcessingStatus("FAILED");
+                    failed.setErrorMessage(e.getMessage());
+                    documentRepository.save(failed);
+                }
+            } catch (Exception ex) {
+                log.error("Failed to mark document {} as FAILED: {}", document.getId(), ex.getMessage());
+            }
         }
     }
 
