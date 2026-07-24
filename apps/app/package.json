@@ -58,11 +58,5 @@
     "lint": "expo lint"
   },
   "private": true,
-  "packageManager": "pnpm@11.5.3",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "dtrace-provider",
-      "unrs-resolver"
-    ]
-  }
+  "packageManager": "pnpm@11.5.3"
 }
