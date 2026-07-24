@@ -6,3 +6,4 @@ hoistPattern:
   - "*css-interop*"
   - "*expo*"
   - "*metro*"
+  - "*babel*"
