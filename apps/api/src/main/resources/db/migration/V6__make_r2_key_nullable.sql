@@ -1,0 +1,1 @@
+ALTER TABLE documents ALTER COLUMN r2_key DROP NOT NULL;
