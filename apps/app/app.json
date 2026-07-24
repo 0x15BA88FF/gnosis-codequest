@@ -6,15 +6,15 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gnosis",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.anonymous.gnosis"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FF9F1C",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -29,17 +29,29 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FF9F1C",
+          "backgroundColor": "#ffffff",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
           }
+        }
+      ],
+      [
+        "expo-system-ui",
+        {
+          "rootViewBackgroundColor": "#ffffff"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "950a0c58-ba0d-4552-9a5a-3b519b369cf1"
+      }
     }
   }
 }
