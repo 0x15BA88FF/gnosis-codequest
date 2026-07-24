@@ -64,6 +64,9 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       MCP_SERVER_URL: ${MCP_SERVER_URL:-http://mcp:9001}
       RESEND_API_KEY: ${RESEND_API_KEY}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY}
+      PAYSTACK_WEBHOOK_SECRET: ${PAYSTACK_WEBHOOK_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
