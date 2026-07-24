@@ -9,9 +9,12 @@ public record OrgResponse(
         UUID id,
         String name,
         UUID ownerId,
-        Instant createdAt
+        Instant createdAt,
+        long memberCount,
+        long mindCount,
+        String role
 ) {
-    public static OrgResponse from(Organization org) {
-        return new OrgResponse(org.getId(), org.getName(), org.getOwner().getId(), org.getCreatedAt());
+    public static OrgResponse from(Organization org, long memberCount, long mindCount, String role) {
+        return new OrgResponse(org.getId(), org.getName(), org.getOwner().getId(), org.getCreatedAt(), memberCount, mindCount, role);
     }
 }

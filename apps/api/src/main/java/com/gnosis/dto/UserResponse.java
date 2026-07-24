@@ -7,6 +7,5 @@ public record UserResponse(
         UUID id,
         String email,
         String displayName,
-        boolean emailVerified,
         Instant createdAt
 ) {}
