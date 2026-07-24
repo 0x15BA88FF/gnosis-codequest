@@ -1,9 +1,4 @@
 allowBuilds:
   dtrace-provider: true
   unrs-resolver: true
-hoistPattern:
-  - "*react-native*"
-  - "*css-interop*"
-  - "*expo*"
-  - "*metro*"
-  - "*babel*"
+shamefullyHoist: true
