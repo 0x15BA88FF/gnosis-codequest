@@ -31,6 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractToken(request);
+        System.out.println("JwtAuthFilter: URI=" + request.getRequestURI() + ", Method=" + request.getMethod() + 
+                ", ContentType=" + request.getContentType() + ", HasAuth=" + (token != null));
         if (token != null && jwtUtil.isValid(token)) {
             UUID userId = jwtUtil.extractUserId(token);
             User user = userRepository.findById(userId).orElse(null);
@@ -39,7 +41,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(userId.toString(), null, null);
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println("JwtAuthFilter: Authenticated userId=" + userId);
+            } else {
+                System.out.println("JwtAuthFilter: User not found for userId=" + userId);
             }
+        } else if (token != null) {
+            System.out.println("JwtAuthFilter: Invalid token");
         }
         filterChain.doFilter(request, response);
     }
