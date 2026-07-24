@@ -1,5 +1,6 @@
 package com.gnosis.controller;
 
+import com.gnosis.config.JwtUtil;
 import com.gnosis.domain.User;
 import com.gnosis.dto.*;
 import com.gnosis.exception.ResourceNotFoundException;
@@ -11,16 +12,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService, UserRepository userRepository) {
+    public AuthController(AuthService authService, UserRepository userRepository, JwtUtil jwtUtil) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
@@ -28,26 +33,9 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
-    @PostMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-        authService.verifyEmail(request.token());
-        return ResponseEntity.noContent().build();
-    }
-
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
-    }
-
-    @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(authService.refresh(request));
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
-        authService.logout(request.refreshToken());
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
@@ -56,4 +44,28 @@ public class AuthController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "current"));
         return ResponseEntity.ok(authService.me(user));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        authService.logout(SecurityUtils.getCurrentUserId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/debug/token")
+    public ResponseEntity<?> debugToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
+        }
+        String token = authHeader.substring(7);
+        try {
+            UUID userId = jwtUtil.extractUserId(token);
+            boolean valid = jwtUtil.isValid(token);
+            User user = userRepository.findById(userId).orElse(null);
+            return ResponseEntity.ok(new DebugTokenResponse(valid, userId.toString(), user != null ? user.getEmail() : "not found"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Token validation failed: " + e.getMessage());
+        }
+    }
+
+    private record DebugTokenResponse(boolean valid, String userId, String email) {}
 }
