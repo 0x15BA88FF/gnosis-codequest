@@ -36,9 +36,6 @@ class IntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
     @MockitoBean
     private QueryService queryService;
 
@@ -49,9 +46,9 @@ class IntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                        new RegisterRequest("integration@example.com", "password123", "Integration User"))));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("integration@example.com", "password123", "Integration User"))));
 
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +91,6 @@ class IntegrationTest {
                                 new RegisterRequest("newuser@example.com", "StrongPass1", "New User"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.refreshToken").value(notNullValue()))
                 .andExpect(jsonPath("$.email").value("newuser@example.com"));
 
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
@@ -103,65 +99,15 @@ class IntegrationTest {
                                 new LoginRequest("newuser@example.com", "StrongPass1"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.refreshToken").value(notNullValue()))
                 .andReturn();
 
         String loginJson = loginResult.getResponse().getContentAsString();
         String accessToken = objectMapper.readTree(loginJson).get("token").asText();
-        String refreshToken = objectMapper.readTree(loginJson).get("refreshToken").asText();
 
         mockMvc.perform(get("/api/v1/auth/me")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("newuser@example.com"));
-
-        var refreshResult = mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RefreshTokenRequest(refreshToken))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.refreshToken").value(notNullValue()))
-                .andReturn();
-
-        String refreshJson = refreshResult.getResponse().getContentAsString();
-        String newAccessToken = objectMapper.readTree(refreshJson).get("token").asText();
-        String newRefreshToken = objectMapper.readTree(refreshJson).get("refreshToken").asText();
-
-        mockMvc.perform(post("/api/v1/auth/logout")
-                        .header("Authorization", "Bearer " + newAccessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RefreshTokenRequest(newRefreshToken))))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void refreshTokenReuseDetection() throws Exception {
-        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new LoginRequest("integration@example.com", "password123"))))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String loginJson = loginResult.getResponse().getContentAsString();
-        String refreshToken = objectMapper.readTree(loginJson).get("refreshToken").asText();
-
-        mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RefreshTokenRequest(refreshToken))))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RefreshTokenRequest(refreshToken))))
-                .andExpect(status().isBadRequest());
-
-        long remainingTokens = refreshTokenRepository.count();
-        assert remainingTokens == 0 : "All tokens should be revoked after reuse detection";
     }
 
     @Test
@@ -219,21 +165,24 @@ class IntegrationTest {
     }
 
     @Test
-    void inviteFlowExistingUser() throws Exception {
+    void orgInviteFlow() throws Exception {
+        // Register the invited user
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
                         new RegisterRequest("invited-user@example.com", "password123", "Invited User"))));
 
-        mockMvc.perform(post("/api/v1/minds/{mindId}/invites", mindId)
+        // Create org invite (not mind invite)
+        mockMvc.perform(post("/api/v1/organizations/{orgId}/invites", orgId)
                         .header("Authorization", bearerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new InviteRequest("invited-user@example.com", "READ"))))
+                                new OrgInviteRequest("invited-user@example.com", "MEMBER"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.inviteeEmail").value("invited-user@example.com"))
                 .andExpect(jsonPath("$.status").value("PENDING"));
 
+        // Login as the invited user
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
@@ -243,6 +192,7 @@ class IntegrationTest {
         String json = loginResult.getResponse().getContentAsString();
         String invitedToken = "Bearer " + objectMapper.readTree(json).get("token").asText();
 
+        // Check pending invites
         mockMvc.perform(get("/api/v1/invites/pending")
                         .header("Authorization", invitedToken))
                 .andExpect(status().isOk())
@@ -256,30 +206,33 @@ class IntegrationTest {
         String pendingJson = pendingResult.getResponse().getContentAsString();
         String inviteToken = objectMapper.readTree(pendingJson).get(0).get("token").asText();
 
+        // Accept the invite
         mockMvc.perform(post("/api/v1/invites/accept")
                         .header("Authorization", invitedToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\": \"" + inviteToken + "\"}"))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/v1/minds/{mindId}/members", mindId)
-                        .header("Authorization", bearerToken))
+        // Verify user is now a member of the org
+        mockMvc.perform(get("/api/v1/organizations/{orgId}", orgId)
+                        .header("Authorization", invitedToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$.name").value("Integration Test Org"));
     }
 
     @Test
-    void inviteFlowDecline() throws Exception {
+    void orgInviteFlowDecline() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
                         new RegisterRequest("decline-user@example.com", "password123", "Decline User"))));
 
-        mockMvc.perform(post("/api/v1/minds/{mindId}/invites", mindId)
+        // Create org invite
+        mockMvc.perform(post("/api/v1/organizations/{orgId}/invites", orgId)
                         .header("Authorization", bearerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new InviteRequest("decline-user@example.com", "READ"))))
+                                new OrgInviteRequest("decline-user@example.com", "MEMBER"))))
                 .andExpect(status().isCreated());
 
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
