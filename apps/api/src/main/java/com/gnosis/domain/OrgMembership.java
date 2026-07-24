@@ -10,6 +10,10 @@ import java.util.UUID;
 })
 public class OrgMembership {
 
+    public static final String ROLE_OWNER = "OWNER";
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_MEMBER = "MEMBER";
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
