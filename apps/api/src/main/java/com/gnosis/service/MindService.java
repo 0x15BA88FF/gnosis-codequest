@@ -20,15 +20,21 @@ public class MindService {
     private final MindMembershipRepository mindMembershipRepository;
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
+    private final OrgMembershipRepository orgMembershipRepository;
+    private final SubscriptionService subscriptionService;
 
     public MindService(MindRepository mindRepository,
                        MindMembershipRepository mindMembershipRepository,
                        OrganizationRepository organizationRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       OrgMembershipRepository orgMembershipRepository,
+                       SubscriptionService subscriptionService) {
         this.mindRepository = mindRepository;
         this.mindMembershipRepository = mindMembershipRepository;
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
+        this.orgMembershipRepository = orgMembershipRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     @Transactional
@@ -37,6 +43,19 @@ public class MindService {
                 .orElseThrow(() -> new ResourceNotFoundException("Organization", orgId));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        OrgMembership membership = orgMembershipRepository.findByOrgIdAndUserId(orgId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("OrgMembership", userId));
+
+        String role = membership.getRole();
+        if (!role.equals(OrgMembership.ROLE_OWNER) && !role.equals(OrgMembership.ROLE_ADMIN)) {
+            throw new ConflictException("Only owners and admins can create minds");
+        }
+
+        if (!subscriptionService.canCreateMind(userId, orgId)) {
+            throw new BadRequestException(
+                "Mind limit reached for this organization on your current plan. Please upgrade to create more minds.");
+        }
 
         Mind mind = new Mind(org, request.name(), user);
         if (request.description() != null) mind.setDescription(request.description());
@@ -48,6 +67,16 @@ public class MindService {
     }
 
     public List<MindResponse> listByOrg(UUID orgId, UUID userId) {
+        OrgMembership membership = orgMembershipRepository.findByOrgIdAndUserId(orgId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("OrgMembership", userId));
+
+        String role = membership.getRole();
+        if (role.equals(OrgMembership.ROLE_OWNER) || role.equals(OrgMembership.ROLE_ADMIN)) {
+            return mindRepository.findByOrgIdAndDeletedAtIsNull(orgId).stream()
+                    .map(MindResponse::from)
+                    .toList();
+        }
+
         List<UUID> mindIds = mindMembershipRepository.findByUserId(userId).stream()
                 .map(ms -> ms.getMind().getId())
                 .toList();
