@@ -23,7 +23,7 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
+  expiration: ${JWT_EXPIRATION:604800000}
 
 r2:
   endpoint: ${R2_ENDPOINT:http://localhost:9000}
@@ -51,6 +51,11 @@ rate-limiting:
 
 upload:
   max-file-size-mb: ${MAX_UPLOAD_SIZE_MB:50}
+
+paystack:
+  secret-key: ${PAYSTACK_SECRET_KEY:sk_test_placeholder}
+  public-key: ${PAYSTACK_PUBLIC_KEY:pk_test_placeholder}
+  webhook-secret: ${PAYSTACK_WEBHOOK_SECRET:}
 
 management:
   endpoints:
