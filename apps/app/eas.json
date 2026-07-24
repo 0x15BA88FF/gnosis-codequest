@@ -4,6 +4,9 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "install": "corepack enable && pnpm install --frozen-lockfile"
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal"
