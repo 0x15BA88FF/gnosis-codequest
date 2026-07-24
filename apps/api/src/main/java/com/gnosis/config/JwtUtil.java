@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
@@ -21,7 +22,15 @@ public class JwtUtil {
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration}") long expirationMs
     ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        // Decode base64 secret if it's base64 encoded
+        byte[] keyBytes;
+        try {
+            keyBytes = Base64.getDecoder().decode(secret);
+        } catch (IllegalArgumentException e) {
+            // Not base64, use as-is
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
         this.expirationMs = expirationMs;
     }
 
